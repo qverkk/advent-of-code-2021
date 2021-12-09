@@ -4,32 +4,25 @@ import com.qverkk.aoc.utils.readInput
 
 fun main() {
     fun part1(input: List<String>): Int {
-        val rowSize = input.first().length
-        val numbers = MutableList(input.size) { MutableList(rowSize) { 0 } }
-        var currentIndex = 0
-        input.forEach { row ->
+        val numbers = input.map { row ->
             row.split("")
                 .filter { it.isNotEmpty() }
                 .map { it.toInt() }
-                .forEach { number ->
-                    val addAtColumn = currentIndex % rowSize
-                    val addAtRow = currentIndex / rowSize
-                    numbers[addAtRow][addAtColumn] = number
-                    currentIndex++
+                .map { number ->
+                    number
                 }
         }
 
-        val result = mutableListOf<Int>()
-        for (rowIndex in numbers.indices) {
-            for (columnIndex in numbers[rowIndex].indices) {
-                val current = numbers[rowIndex][columnIndex]
+        return numbers.mapIndexed { rowIndex, row ->
+            row.mapIndexed { columnIndex, columnNumber ->
                 val neighbours = numbers.getNeighboursAtIndex(rowIndex, columnIndex)
-                if (neighbours.minOf { it } > current) {
-                    result.add(current + 1)
+                if (neighbours.minOf { it > columnNumber }) {
+                    columnNumber + 1
+                } else {
+                    null
                 }
             }
-        }
-        return result.sum()
+        }.flatten().filterNotNull().sum()
     }
 
     fun part2(input: List<String>): Int {
