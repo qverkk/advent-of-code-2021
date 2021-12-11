@@ -57,37 +57,29 @@ data class Octopus(
 
 fun flashAdajecent(octopuses: List<Octopus>, currentOctopus: Octopus): List<Octopus> {
     val adajecentPositions = currentOctopus.findAdajecent()
-    val filter = octopuses
+    return octopuses
         .filter { it.inOneOfThePositions(adajecentPositions) }
-    return filter
-        .map {
+        .onEach {
             it.increment()
-            it
         }
-        .map {
+        .onEach {
             if (it.tick()) {
                 flashAdajecent(octopuses, it)
             }
-            it
         }
 }
 
 fun main() {
 
-    fun octopusSequence(octopuses: List<Octopus>): Sequence<List<Octopus>> {
-        val seq = generateSequence(octopuses) {
-            it.forEach { octopus ->
-                octopus.reset()
-                octopus.increment()
+    fun octopusSequence(octopuses: List<Octopus>) = generateSequence(octopuses) { list ->
+        list.onEach {
+            it.reset()
+            it.increment()
+        }.onEach {
+            if (it.tick()) {
+                flashAdajecent(octopuses, it)
             }
-            it.forEach { octopus ->
-                if (octopus.tick()) {
-                    flashAdajecent(octopuses, octopus)
-                }
-            }
-            octopuses
         }
-        return seq
     }
 
     fun parseOctopuses(input: List<String>) = input.mapIndexed { rowIndex, row ->
