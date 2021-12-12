@@ -21,7 +21,7 @@ data class TunnelConnection(
     }
 }
 
-class TunnelPath private constructor(val path: List<String>, val alreadyVisitedSmallCave: Boolean) {
+class TunnelPath private constructor(val path: List<String>, val smallCaveVisitedTwice: Boolean) {
     constructor() : this(listOf("start"), false)
 
     val currentTunnel: String = path.last()
@@ -30,7 +30,7 @@ class TunnelPath private constructor(val path: List<String>, val alreadyVisitedS
 
     fun alreadyVisited(cave: String) = path.contains(cave)
 
-    fun addCave(cave: String) = TunnelPath(path + cave, cave.isSmall() && alreadyVisited(cave))
+    fun addCave(cave: String) = TunnelPath(path + cave, smallCaveVisitedTwice || cave.isSmall() && alreadyVisited(cave))
 
     private fun String.isSmall() = this[0].isLowerCase() && this != "start"
 }
@@ -41,11 +41,7 @@ private fun List<TunnelConnection>.cavesConnectedTo(cave: String) =
 private fun String.isLarge() = this[0].isUpperCase()
 
 fun main() {
-    fun part1(input: List<String>): Int {
-        val connections = input.map {
-            TunnelConnection.parse(it)
-        }
-
+    fun countOfPossiblePaths(connections: List<TunnelConnection>, part2: Boolean = false): Int {
         var count = 0
         var paths = listOf(TunnelPath())
         while (paths.isNotEmpty()) {
@@ -55,7 +51,11 @@ fun main() {
                 .flatMap { path ->
                     connections.cavesConnectedTo(path.currentTunnel)
                         .filter { it != "start" }
-                        .filter { it.isLarge() || !path.alreadyVisited(it) }
+                        .filter {
+                            it.isLarge() ||
+                                (part2 && !path.smallCaveVisitedTwice) ||
+                                !path.alreadyVisited(it)
+                        }
                         .map { path.addCave(it) }
                 }
         }
@@ -63,14 +63,26 @@ fun main() {
         return count
     }
 
+    fun part1(input: List<String>): Int {
+        val connections = input.map {
+            TunnelConnection.parse(it)
+        }
+
+        return countOfPossiblePaths(connections)
+    }
+
     fun part2(input: List<String>): Int {
-        return 0
+        val connections = input.map {
+            TunnelConnection.parse(it)
+        }
+
+        return countOfPossiblePaths(connections, true)
     }
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("com/qverkk/aoc/day12/Day12_test")
     check(part1(testInput) == 19)
-    // check(part2(testInput) == 195)
+    check(part2(testInput) == 103)
 
     val input = readInput("com/qverkk/aoc/day12/Day12")
     println(part1(input))
