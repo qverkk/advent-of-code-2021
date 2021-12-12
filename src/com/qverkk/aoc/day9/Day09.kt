@@ -27,20 +27,16 @@ fun main() {
 
     fun searchBasins(
         pair: Pair<Int, Pair<Int, Int>>,
-        res: MutableList<MutableList<Int>>,
-        nextNumber: Int,
+        res: MutableMap<Pair<Int, Int>, Int>,
         numbers: List<List<Int>>
     )  {
-        if (nextNumber > 8) {
-            return
-        }
-
         val neighbors = pair.second.neighbors()
         neighbors
+            .filter { !res.contains(it) }
             .map { numbers.getNumberAt(it.first, it.second) to it }
-            .filter { it.first == nextNumber }
-            .onEach { res[it.second.first][it.second.second] = nextNumber }
-            .forEach { searchBasins(it, res, nextNumber + 1, numbers) }
+            .filter { it.first > -1 && it.first < 9 }
+            .onEach { res[it.second] = it.first }
+            .forEach { searchBasins(it, res, numbers) }
     }
 
     fun part2(input: List<String>): Int {
@@ -65,19 +61,13 @@ fun main() {
         }.flatten().filterNotNull()
 
         val map = lowPoints.map {
-            val res = MutableList(numbers.size) {
-                MutableList(numbers[0].size) {
-                    -1
-                }
-            }.apply {
-                this[it.second.first][it.second.second] = it.first
-            }
-            searchBasins(it, res, it.first + 1, numbers)
+            val res = mutableMapOf<Pair<Int, Int>, Int>()
+            searchBasins(it, res, numbers)
             res
         }
 
         return map
-            .map { it.sumOf { l -> l.count { n -> n != -1 } } }
+            .map { it.size }
             .sorted()
             .takeLast(3)
             .reduce { a, b -> a * b }
