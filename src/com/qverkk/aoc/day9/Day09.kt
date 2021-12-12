@@ -15,7 +15,7 @@ fun main() {
 
         return numbers.mapIndexed { rowIndex, row ->
             row.mapIndexed { columnIndex, columnNumber ->
-                val neighbours = numbers.getNeighboursAtIndex(rowIndex, columnIndex)
+                val neighbours = numbers.getNeighboursAtIndex(rowIndex, columnIndex).filter { it != -1 }
                 if (neighbours.minOf { it > columnNumber }) {
                     columnNumber + 1
                 } else {
@@ -23,6 +23,24 @@ fun main() {
                 }
             }
         }.flatten().filterNotNull().sum()
+    }
+
+    fun searchBasins(
+        pair: Pair<Int, Pair<Int, Int>>,
+        res: MutableList<MutableList<Int>>,
+        nextNumber: Int,
+        numbers: List<List<Int>>
+    )  {
+        if (nextNumber > 8) {
+            return
+        }
+
+        val neighbors = pair.second.neighbors()
+        neighbors
+            .map { numbers.getNumberAt(it.first, it.second) to it }
+            .filter { it.first == nextNumber }
+            .onEach { res[it.second.first][it.second.second] = nextNumber }
+            .forEach { searchBasins(it, res, nextNumber + 1, numbers) }
     }
 
     fun part2(input: List<String>): Int {
@@ -35,29 +53,36 @@ fun main() {
                 }
         }
 
-        val res = numbers.mapIndexed { rowIndex, row ->
+        val lowPoints = numbers.mapIndexed { rowIndex, row ->
             row.mapIndexed { columnIndex, columnNumber ->
-                val neighbours = numbers.getNeighboursAtIndex(rowIndex, columnIndex)
+                val neighbours = numbers.getNeighboursAtIndex(rowIndex, columnIndex).filter { it != -1 }
                 if (neighbours.minOf { it > columnNumber }) {
-                    mutableListOf(Occurance(rowIndex, columnIndex, columnNumber)).apply {
-                        addAll(
-                            numbers.getNextIncrementedNumber(
-                                columnNumber + 1,
-                                rowIndex,
-                                columnIndex,
-                                mutableListOf()
-                            )
-                        )
-                    }
+                    columnNumber to (rowIndex to columnIndex)
                 } else {
                     null
                 }
             }
+        }.flatten().filterNotNull()
+
+        val map = lowPoints.map {
+            val res = MutableList(numbers.size) {
+                MutableList(numbers[0].size) {
+                    -1
+                }
+            }.apply {
+                this[it.second.first][it.second.second] = it.first
+            }
+            searchBasins(it, res, it.first + 1, numbers)
+            res
         }
-        return res.flatten().filterNotNull().sortedBy { it.size }.takeLast(3).map { it.size }.reduce { a, b -> a * b }
+
+        return map
+            .map { it.sumOf { l -> l.count { n -> n != -1 } } }
+            .sorted()
+            .takeLast(3)
+            .reduce { a, b -> a * b }
     }
 
-    // test if implementation meets criteria from the description, like:
     val testInput = readInput("com/qverkk/aoc/day9/Day09_test")
     check(part1(testInput) == 15)
     check(part2(testInput) == 1134)
@@ -67,47 +92,11 @@ fun main() {
     println(part2(input))
 }
 
-private fun List<List<Int>>.getNextIncrementedNumber(
-    expectedNumber: Int,
-    rowIndex: Int,
-    columnIndex: Int,
-    currentOccurances: MutableList<Occurance>
-): List<Occurance> {
-    if (expectedNumber == 9) {
-        return emptyList()
-    }
-    val left = getNumberAt(rowIndex, columnIndex - 1)
-    val right = getNumberAt(rowIndex, columnIndex + 1)
-    val up = getNumberAt(rowIndex + 1, columnIndex)
-    val down = getNumberAt(rowIndex - 1, columnIndex)
-    val res = listOfNotNull(
-        if (left != null) Occurance(rowIndex, columnIndex - 1, left) else null,
-        if (right != null) Occurance(rowIndex, columnIndex + 1, right) else null,
-        if (up != null) Occurance(rowIndex + 1, columnIndex, up) else null,
-        if (down != null) Occurance(rowIndex - 1, columnIndex, down) else null
-    ).filter { occurance -> occurance.number == expectedNumber }
-        .filter { !currentOccurances.contains(it) }
-    currentOccurances.addAll(res)
-    return res
-        .map { occurance: Occurance ->
-            val ttt = getNextIncrementedNumber(
-                expectedNumber + 1,
-                occurance.row,
-                occurance.column,
-                currentOccurances
-            )
-            currentOccurances.addAll(ttt)
-
-            mutableListOf(occurance).apply {
-                this.addAll(ttt)
-            }
-        }.flatten()
-}
-
-data class Occurance(
-    val row: Int,
-    val column: Int,
-    val number: Int
+fun Pair<Int, Int>.neighbors() = listOf(
+    this.first to this.second + 1,
+    this.first to this.second - 1,
+    this.first + 1 to this.second,
+    this.first - 1 to this.second
 )
 
 private fun List<List<Int>>.getNeighboursAtIndex(rowIndex: Int, columnIndex: Int): List<Int> {
@@ -118,10 +107,10 @@ private fun List<List<Int>>.getNeighboursAtIndex(rowIndex: Int, columnIndex: Int
     return listOfNotNull(left, right, up, down)
 }
 
-private fun List<List<Int>>.getNumberAt(rowIndex: Int, columnIndex: Int): Int? {
+private fun List<List<Int>>.getNumberAt(rowIndex: Int, columnIndex: Int): Int {
     return try {
         this[rowIndex][columnIndex]
     } catch (e: IndexOutOfBoundsException) {
-        null
+        -1
     }
 }
