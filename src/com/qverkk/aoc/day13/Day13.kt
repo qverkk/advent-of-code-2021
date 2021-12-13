@@ -61,6 +61,21 @@ fun countDots(foldedPoints: List<Pair<Int, Int>>): Int {
     return result
 }
 
+fun printTransparentLetters(foldedPoints: List<Pair<Int, Int>>) {
+    val maxWidth = foldedPoints.maxOf { it.first }
+    val maxHeight = foldedPoints.maxOf { it.second }
+    for (i in 0..maxHeight) {
+        for (j in 0..maxWidth) {
+            if (foldedPoints.contains(j to i)) {
+                print("#")
+            } else {
+                print(" ")
+            }
+        }
+        println()
+    }
+}
+
 fun main() {
 
     fun part1(input: List<String>): Int {
@@ -84,16 +99,36 @@ fun main() {
         return countDots(foldedPoints)
     }
 
-    fun part2(input: List<String>): Int {
-        return 0
+    fun part2(input: List<String>) {
+        val folds = input
+            .filter { it.startsWith("fold along") }
+            .map {
+                it.replace("fold along ", "")
+                    .replace("=", " ").split(" ")
+            }.map {
+                Fold(it[1].toInt(), FoldDirection.parse(it[0]))
+            }
+
+        val points = input
+            .filter { !it.startsWith("fold along") && it.isNotBlank() }
+            .map { line ->
+                val split = line.split(",").map { it.toInt() }
+                split[0] to split[1]
+            }
+
+        var currentPoints = points
+        folds.forEach {
+            currentPoints = fold(it, currentPoints)
+        }
+
+        printTransparentLetters(currentPoints)
     }
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("com/qverkk/aoc/day13/Day13_test")
     check(part1(testInput) == 17)
-    // check(part2(testInput) == 103)
 
     val input = readInput("com/qverkk/aoc/day13/Day13")
     println(part1(input))
-    // println(part2(input))
+    part2(input)
 }
