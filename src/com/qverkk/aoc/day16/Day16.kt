@@ -44,7 +44,15 @@ class Literal(val version: Int, override val value: Long) : Bits() {
 class Operation(val version: Int, val packetType: Int, val packets: List<Bits>): Bits() {
     override fun versions(): List<Int> = listOf(version) + packets.flatMap { it.versions() }
 
-    override val value: Long = 1
+    override val value: Long = when (packetType) {
+        0 -> packets.sumOf { it.value }
+        1 -> packets.fold(1) { a, b -> a * b.value }
+        2 -> packets.minOf { it.value }
+        3 -> packets.maxOf { it.value }
+        5 -> if (packets[0].value > packets[1].value) 1 else 0
+        6 -> if (packets[0].value < packets[1].value) 1 else 0
+        else -> if (packets[0].value == packets[1].value) 1 else 0
+    }
 
     companion object {
         fun parse(packetVersion: Int, packetType: Int, input: Deque<Char>): Operation {
@@ -89,8 +97,15 @@ fun main() {
         return versions.sumOf { it.toLong() }
     }
 
-    fun part2(input: String): Int {
-        return 0
+    fun part2(input: String): Long {
+        val queue: Deque<Char> = LinkedList()
+        input.map {
+            it.digitToInt(16).toString(2).padStart(4, '0')
+        }.forEach { hex ->
+            hex.forEach { queue.addLast(it) }
+        }
+        val parse = Bits.parse(queue)
+        return parse.value
     }
 
     // test if implementation meets criteria from the description, like:
