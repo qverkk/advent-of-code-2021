@@ -25,47 +25,7 @@ fun main() {
         return pointsToHit
     }
 
-    fun part1(input: String): Int {
-        val pointsToHit = parseInput(input)
-
-        val minX = pointsToHit.minOf { it.x }
-        val minY = pointsToHit.minOf { it.y }
-        val startingPoints = mutableListOf<Point>()
-        for (i in 1..minX) {
-            for (j in 1..minY.absoluteValue) {
-                startingPoints.add(Point(i, j))
-            }
-        }
-
-        val possibleHits = startingPoints.map { p ->
-            var moveBy = Point(p.x, p.y)
-            var current = Point(p.x, p.y)
-            val result = mutableListOf(current)
-            while (current.y > minY) {
-                val newX = when {
-                    moveBy.x == 0 -> 0
-                    moveBy.x > 0 -> moveBy.x - 1
-                    else -> moveBy.x + 1
-                }
-                val newY = moveBy.y - 1
-                moveBy = Point(newX, newY)
-                current = Point(current.x + moveBy.x, current.y + moveBy.y)
-                result.add(current)
-                if (pointsToHit.contains(current)) {
-                    return@map result
-                }
-            }
-            emptyList()
-        }
-
-        return possibleHits.filter { it.isNotEmpty() }
-            .map { p -> p.maxOf { it.y } }
-            .maxOf { it }
-    }
-
-    fun part2(input: String): Int {
-        val pointsToHit = parseInput(input)
-
+    fun getPossibleHits(pointsToHit: MutableList<Point>): List<List<Point>> {
         val minX = pointsToHit.maxOf { it.x }
         val minY = pointsToHit.minOf { it.y }
         val startingPoints = mutableListOf<Point>()
@@ -95,6 +55,23 @@ fun main() {
             }
             emptyList()
         }
+        return possibleHits
+    }
+
+    fun part1(input: String): Int {
+        val pointsToHit = parseInput(input)
+
+        val possibleHits = getPossibleHits(pointsToHit)
+
+        return possibleHits.filter { it.isNotEmpty() }
+            .map { p -> p.maxOf { it.y } }
+            .maxOf { it }
+    }
+
+    fun part2(input: String): Int {
+        val pointsToHit = parseInput(input)
+
+        val possibleHits = getPossibleHits(pointsToHit)
 
         return possibleHits.count { it.isNotEmpty() }
     }
