@@ -5,7 +5,7 @@ import java.awt.Point
 import kotlin.math.absoluteValue
 
 fun main() {
-    fun part1(input: String): Int {
+    fun parseInput(input: String): MutableList<Point> {
         val split = input.replace("target area: x=", "")
             .replace(", y=", " ")
             .split(" ")
@@ -22,6 +22,11 @@ fun main() {
                 pointsToHit.add(Point(i, j))
             }
         }
+        return pointsToHit
+    }
+
+    fun part1(input: String): Int {
+        val pointsToHit = parseInput(input)
 
         val minX = pointsToHit.minOf { it.x }
         val minY = pointsToHit.minOf { it.y }
@@ -59,22 +64,7 @@ fun main() {
     }
 
     fun part2(input: String): Int {
-        val split = input.replace("target area: x=", "")
-            .replace(", y=", " ")
-            .split(" ")
-        val x = split[0]
-            .split("..")
-            .map { it.toInt() }
-        val y = split[1]
-            .split("..")
-            .map { it.toInt() }
-
-        val pointsToHit = mutableListOf<Point>()
-        for (i in x[0]..x[1]) {
-            for (j in y[0]..y[1]) {
-                pointsToHit.add(Point(i, j))
-            }
-        }
+        val pointsToHit = parseInput(input)
 
         val minX = pointsToHit.maxOf { it.x }
         val minY = pointsToHit.minOf { it.y }
